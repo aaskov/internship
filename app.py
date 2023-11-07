@@ -43,7 +43,13 @@ def home():
         "Message": "App is up and running successfully"
     })
 
+# Define the '/test' endpoint
+@app.route("/test", methods=["POST"])
+def test():
+    request_data = request.get_json()
+    return jsonify(request_data)
 
+"""
 # Define the '/solver' endpoint
 @app.route("/solver", methods=["POST"])
 def solver():
@@ -68,7 +74,7 @@ def solver():
     return jsonify({
         "Message": request_data['message']
     })
-
+"""
 
 
 # ==============================================================================

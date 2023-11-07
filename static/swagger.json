@@ -34,9 +34,9 @@
       }
     },
 
-    "/solver": {
+    "/test": {
       "post": {
-        "description": "Solve a new instance of student allocations",
+        "description": "Returns the exact same object that it is provided in body",
         "consumes": [
           "application/json"
         ],
@@ -47,10 +47,9 @@
           {
             "name": "data",
             "in": "body",
-            "description": "Data for the solver in JSON format",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Model"
+              "$ref": "#/definitions/test"
             }
           }
         ],
@@ -64,47 +63,23 @@
 
   },
 "definitions": {
-    "Model": {
+    "test": {
         "type": "object",
         "properties": {
-            "language": {
-                "type": "string",
-                "example": "Python"
-            },
-            "framework": {
-                "type": "string",
-                "example": "Flask"
-            },
-            "website": {
-                "type": "string",
-                "example": "Scotch"
-            },
-            "version_info": {
+            "something1": {
                 "type": "object",
                 "properties": {
-                    "python": {
+                    "string1": {
                         "type": "string",
-                        "example": "3.9.0"
+                        "example": "content1"
                     },
-                    "flask": {
+                    "string2": {
                         "type": "string",
-                        "example": "1.1.2"
+                        "example": "content2"
                     }
                 }
             },
-            "examples": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "example": "['Rasmus', 'Ib']"
-            },
-            "boolean_test": {
-                "type": "boolean",
-                "example": true
-            }
-        },
-        "required": ["language", "framework", "website", "version_info", "examples", "boolean_test"]
+        }
     }
 }
 }
