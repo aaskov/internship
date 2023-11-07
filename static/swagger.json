@@ -9,7 +9,8 @@
       "version": "1.0.0"
   },
   "schemes": [
-      "http"
+      "http",
+      "https"
       ],
   "consumes": [
       "application/json"
