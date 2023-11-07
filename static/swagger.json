@@ -1,0 +1,109 @@
+{
+  "swagger": "2.0",
+  "info": {
+      "title": "Internship",
+      "description": "This module contains the assignment solver for the student allocation problem.",
+      "contact": {
+          "name": "Rasmus Jessen Aaskov"
+      },
+      "version": "1.0.0"
+  },
+  "schemes": [
+      "http"
+      ],
+  "consumes": [
+      "application/json"
+  ],
+  "produces":[
+      "application/json"
+  ],
+  "paths": {
+
+    "/": {
+      "get": {
+        "description": "Returns message showing app is up and running",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+
+    "/solver": {
+      "post": {
+        "description": "Solve a new instance of student allocations",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "description": "Data for the solver in JSON format",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Model"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+        }
+      }
+    }
+
+  },
+"definitions": {
+    "Model": {
+        "type": "object",
+        "properties": {
+            "language": {
+                "type": "string",
+                "example": "Python"
+            },
+            "framework": {
+                "type": "string",
+                "example": "Flask"
+            },
+            "website": {
+                "type": "string",
+                "example": "Scotch"
+            },
+            "version_info": {
+                "type": "object",
+                "properties": {
+                    "python": {
+                        "type": "string",
+                        "example": "3.9.0"
+                    },
+                    "flask": {
+                        "type": "string",
+                        "example": "1.1.2"
+                    }
+                }
+            },
+            "examples": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "example": "['Rasmus', 'Ib']"
+            },
+            "boolean_test": {
+                "type": "boolean",
+                "example": true
+            }
+        },
+        "required": ["language", "framework", "website", "version_info", "examples", "boolean_test"]
+    }
+}
+}
