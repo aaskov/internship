@@ -49,21 +49,48 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/test"
+              "$ref": "#/definitions/test_data"
             }
           }
         ],
         "responses": {
           "200": {
             "description": "Successful operation"
-          },
+          }
+        }
+      }
+    },
+
+    "/solver": {
+      "post": {
+        "description": "Solve a new instance of the student allocation problem",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema" : {
+              "$ref": "#/definitions/solver_data"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
         }
       }
     }
 
   },
 "definitions": {
-    "test": {
+    "test_data": {
         "type": "object",
         "properties": {
             "something1": {
@@ -80,6 +107,60 @@
                 }
             },
         }
+    },
+    "solver_data": {
+        "type": "object",
+        "properties": {
+            "all_location_names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["Pædiatrisk Afdeling Kolding", "Lægerne Enghavevej Nyborg"]
+            },
+            "all_location_capacities": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "example": "[[1, 1], [1, 1]]"
+            },
+            "all_student_names": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["John Smith", "Lily James"]
+            },
+            "all_week_names": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["Week 43", "Week 44"]
+            },
+            "all_internships": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                },
+                "example": "[[0], [1]]"
+            },
+            "allocation_rule": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "example": "[1, 1]"
+            }
+        },
+        "required": ["all_location_names", "all_location_capacities", "all_student_names", "all_week_names", "all_internships", "allocation_rule"]
     }
 }
 }

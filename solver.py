@@ -8,7 +8,9 @@ The assignment solver returns the optimized solution to a given input.
 from ortools.sat.python import cp_model
 
 
-def solve_internship(students, weeks, internships, allocations):
+def solve_internship(all_location_names, all_location_capacities, 
+                     all_student_names, all_week_names, all_internships, 
+                     allocation_rule):
     """Solve internship allocation.
 
     This function solves the allocation task given the following input
@@ -16,17 +18,26 @@ def solve_internship(students, weeks, internships, allocations):
     internship for each student.
 
     Args:
-        students : Array of student identities.
-            Array of student identities represented by name or index
-        weeks : Array of available weeks for allocation.
-            Array of weeks that are available for internship allocations.
-        internships : Array of Array of internship and locations.
-            Array conatining internship and location relation.
-        allocations : Array of int.
-            Array defining the allocation rules in relation to the internships.
+        all_location_names : Array of string.
+            A list of available location names.
+        all_location_capacities : Array of Array of string.
+            A list of capacities (per week) for indices in 'all_location_names'.
+        all_student_names : Array of string.
+            A list of student names.
+        all_week_names : Array of string.
+            A list of week names (sorted by time, ASC).
+        all_internships : Array of Array of Int.
+            Array indexing 'all_location_names' belonging to a 'internship'.
+        allocation_rule : Array of int.
+            Array of week count following the index of 'all_internships'.
 
     Returns:
-        bool: The return value. True for success, False otherwise.
+        assignment : Dictionary of student allocations.
+            Dictionary with a 4d-tuple containing boolean allocation.
+        solver : CP-model solver.
+            Variable containing the cp-model model solver.
+        status : Status for the model solver.
+            Variable containing the status of the model solver.
 
     """
     assignment = {}
@@ -34,12 +45,12 @@ def solve_internship(students, weeks, internships, allocations):
     model = cp_model.CpModel()
 
     # Initialize: Assignment dictionary
-    for s, student in enumerate(students):
-        for w, week in enumerate(weeks):
-            for i, internship in enumerate(internships):
-                for l, location in enumerate(internship):
-                    name = f"assign_s{s}_w{w}_i{i}_l{l}"
-                    assignment[(s, w, i, l)] = model.NewIntVar(0, 1, name)
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)):
+            for i in range(len(all_internships)):
+                for j in range(len(all_internships[i])):
+                    name = f"assign_s{s}_w{w}_i{i}_j{j}"
+                    assignment[(s, w, i, j)] = model.NewIntVar(0, 1, name)
 
     # ====
     # Define constrains
@@ -48,33 +59,37 @@ def solve_internship(students, weeks, internships, allocations):
     # ----
     # Rule: For a given week add add exactly one allocation per student
     # ----
-    for s, student in enumerate(students):
-        for w, week in enumerate(weeks):
-            model.AddExactlyOne(assignment[(s, w, i, l)]
-                                for i, internship in enumerate(internships)
-                                for l, location in enumerate(internship))
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)):
+            model.AddExactlyOne(assignment[(s, w, i, j)]
+                                for i in range(len(all_internships))
+                                for j in range(len(all_internships[i])))
 
     # ----
     # Rule: Any student must follow the allocation rules
     # ----
-    for s, student in enumerate(students):
-        for a, allocation in enumerate(allocations):
-            allocated = [assignment[(s, w, i, l)]
-                         for w, _ in enumerate(weeks)
-                         for l, _ in enumerate(internships[a])]
+    for s in range(len(all_student_names)):
+        for a, allocation in enumerate(allocation_rule):
+            allocated = [assignment[(s, w, a, j)]
+                         for w in range(len(all_week_names))
+                         for j in range(len(all_internships[a]))]
 
             model.Add(sum(allocated) == allocation)
 
     # ----
     # Rule: In any week at any location the capacity constrain must be met
     # ----
-    for w, week in enumerate(weeks):
-        for i, internship in enumerate(internships):
-            for l, location in enumerate(internship):
-                allocated = [assignment[(s, w, i, l)]
-                             for s, _ in enumerate(students)]
+    for w in range(len(all_week_names)):
+        for i in range(len(all_internships)):
+            for j in range(len(all_internships[i])):
+                allocated = [assignment[(s, w, i, j)]
+                             for s in range(len(all_student_names))]
 
-                model.Add(sum(allocated) <= location[1][w])
+                # Get all the capacity for a location (if none is defined, set 0)
+                _capacities = all_location_capacities[all_internships[i][j]]
+                _capacity = _capacities[w] if w < len(_capacities) else 0
+                
+                model.Add(sum(allocated) <= _capacity)
 
 
     # ====
@@ -84,11 +99,11 @@ def solve_internship(students, weeks, internships, allocations):
     loss = []
 
     # Initialize: Loss list
-    for s in range(len(students)):
-        for w in range(len(weeks)-1):
-            for i in range(len(internships)):
-                for l in range(len(internships[i])):
-                    name = f"loss_s{s}_w{w}_i{i}_l{l}"
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)-1):
+            for i in range(len(all_internships)):
+                for j in range(len(all_internships[i])):
+                    name = f"loss_s{s}_w{w}_i{i}_j{j}"
                     loss.append(model.NewIntVar(0, 1, name))
 
     # ---
@@ -96,16 +111,16 @@ def solve_internship(students, weeks, internships, allocations):
     # ---
     idx = 0
 
-    for s in range(len(students)):
-        for w in range(len(weeks)-1):
-            for i in range(len(internships)):
-                for l in range(len(internships[i])):
-                    name = f"pennalize_s{s}_w{w}_i{i}_l{l}"
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)-1):
+            for i in range(len(all_internships)):
+                for j in range(len(all_internships[i])):
+                    name = f"pennalize_s{s}_w{w}_i{i}_j{j}"
                     variable = model.NewIntVar(-1, 1, name)
 
                     # Pennalize changes "in the next week" allocation
-                    model.Add(variable == assignment[(s, w, i, l)] - 
-                              assignment[(s, w+1, i, l)])
+                    model.Add(variable == assignment[(s, w, i, j)] - 
+                              assignment[(s, w+1, i, j)])
                     model.AddAbsEquality(loss[idx], variable)
 
                     idx = idx + 1
@@ -119,7 +134,7 @@ def solve_internship(students, weeks, internships, allocations):
     solver = cp_model.CpSolver()
 
     # Set a time limit
-    solver.parameters.max_time_in_seconds = 60 * 1
+    solver.parameters.max_time_in_seconds = 55
 
     # Start
     status = solver.Solve(model)
