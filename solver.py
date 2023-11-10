@@ -44,7 +44,29 @@ def solve_internship(all_location_names, all_location_capacities,
 
     model = cp_model.CpModel()
 
+    # ====
+    # Pre-rule: Compensate for missing weeks (weeks w. no allocation)
+    # ----
+    if len(all_week_names) > sum(allocation_rule):
+        dif = len(all_week_names) - sum(allocation_rule)
+
+        # Append a 'not allocated' location
+        all_location_names.append("NOT_A_LOCATION")
+
+        # Append infinity capacity
+        all_location_capacities.append([999999 for i in range(len(all_week_names))])
+
+        # Append new allocation rule (which must compensate the difference)
+        allocation_rule.append(dif)
+
+        # Append new internship
+        last_index = len(all_location_names) - 1
+        all_internships.append([last_index])
+
+
+    # ====
     # Initialize: Assignment dictionary
+    # ----
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)):
             for i in range(len(all_internships)):
