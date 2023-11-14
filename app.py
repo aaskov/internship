@@ -83,32 +83,63 @@ def solver():
     if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
         
         # Construct a dictionary of assignments
-        solution = dict()
+        solution = list()
+
         for s in range(len(all_student_names)):
-            solution[all_student_names[s]] = dict()
+            _new_entries = list()
 
             for w in range(len(all_week_names)):
+                _new_entry = dict()
+
                 for i in range(len(all_internships)):
                     for j in range(len(all_internships[i])):
+
+                        # Only append if True in assignment
                         if solver.Value(assignment[(s,w,i,j)]):
-                            solution[all_student_names[s]][all_week_names[w]] = f"Assigned internship {i} at location {all_location_names[all_internships[i][j]]}"
+
+                            # Append anythig
+                            if len(_new_entries) == 0:
+                                _new_entry["student"] = all_student_names[s]
+                                _new_entry["start_week"] = all_week_names[w]
+                                _new_entry["duration"] = 1
+                                _new_entry["location"] = all_location_names[all_internships[i][j]]
+                                _new_entry["internship"] = i
+                                _new_entries.append(_new_entry)
+                            else:
+                                # Check if previous entry matches current internship
+                                if _new_entries[-1]["internship"] == i:
+                                    _new_entries[-1]["duration"] += 1
+
+                                else:
+                                    # Insert a new entry
+                                    _new_entry["student"] = all_student_names[s]
+                                    _new_entry["start_week"] = all_week_names[w]
+                                    _new_entry["duration"] = 1
+                                    _new_entry["location"] = all_location_names[all_internships[i][j]]
+                                    _new_entry["internship"] = i
+                                    _new_entries.append(_new_entry)
+
+            # Copy list to solution
+            for e in _new_entries:
+                solution.append(e)
+
 
         # Return
         return jsonify({
-            "is_feasible": f"{status == cp_model.FEASIBLE}",
-            "is_optimal": f"{status == cp_model.OPTIMAL}",
-            "objective": f"{solver.ObjectiveValue()}",
-            "conflicts": f"{solver.NumConflicts()}",
-            "branches": f"{solver.NumBranches()}",
-            "wall_time": f"{solver.WallTime()}",
+            "is_feasible": status == cp_model.FEASIBLE,
+            "is_optimal": status == cp_model.OPTIMAL,
+            "objective": solver.ObjectiveValue(),
+            "conflicts": solver.NumConflicts(),
+            "branches": solver.NumBranches(),
+            "wall_time": solver.WallTime(),
             "solution": solution
         })
 
     else:
         # Return
         return jsonify({
-            "is_feasible": f"{status == cp_model.FEASIBLE}",
-            "is_optimal": f"{status == cp_model.OPTIMAL}"
+            "is_feasible": status == cp_model.FEASIBLE,
+            "is_optimal": status == cp_model.OPTIMAL
             })
 
 
