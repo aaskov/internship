@@ -61,10 +61,47 @@ def solver():
     all_internships = request_data['all_internships']
     all_location_names = request_data['all_location_names']
     all_location_capacities = request_data['all_location_capacities']
-    all_student_names = request_data['all_student_names']
+    #all_student_priorities = request_data['all_student_priorities']
     all_week_names = request_data['all_week_names']
     allocation_rule = request_data['allocation_rule']
-    
+    all_student_names = request_data['all_student_names']
+
+
+    # ---
+    # Debug arguments
+    # ---
+    if True:
+        print("")
+        print("==================")
+        print("all_internships")
+        print("------------------")
+        print(all_internships)
+        print("")
+        print("==================")
+        print("all_location_names")
+        print("------------------")
+        print(all_location_names)
+        print("")
+        print("==================")
+        print("all_location_capacities")
+        print("------------------")
+        print(all_location_capacities)
+        print("")
+        print("==================")
+        print("all_week_names")
+        print("------------------")
+        print(all_week_names)
+        print("")
+        print("==================")
+        print("allocation_rule")
+        print("------------------")
+        print(allocation_rule)
+        print("")
+        print("==================")
+        print("all_student_names")
+        print("------------------")
+        print(all_student_names)
+        print("")
 
 
     # ---
