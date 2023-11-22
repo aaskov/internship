@@ -160,7 +160,7 @@
               "example": "[1, 1]"
             }
         },
-        "required": ["all_location_names", "all_location_capacities", "all_student_names", "all_week_names", "all_internships", "allocation_rule"]
+        "required": ["all_location_names", "all_location_capacities", "all_student_names", "all_student_priorities", "all_week_names", "all_internships", "allocation_rule"]
     }
 }
 }
