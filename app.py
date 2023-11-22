@@ -65,6 +65,7 @@ def solver():
     all_week_names = request_data['all_week_names']
     allocation_rule = request_data['allocation_rule']
     all_student_names = request_data['all_student_names']
+    max_time = request_data['max_time']
 
 
     # ---
@@ -112,7 +113,8 @@ def solver():
                                                   all_student_names=all_student_names, 
                                                   all_week_names=all_week_names, 
                                                   all_internships=all_internships, 
-                                                  allocation_rule=allocation_rule)
+                                                  allocation_rule=allocation_rule,
+                                                  max_time=max_time)
 
     # ---
     # Construct output allocation

@@ -205,7 +205,7 @@ from ortools.sat.python import cp_model
 
 def solve_internship(all_location_names, all_location_capacities, 
                      all_student_names, all_week_names, all_internships, 
-                     allocation_rule):
+                     allocation_rule, max_time=55):
     """Solve internship allocation.
 
     This function solves the allocation task given the following input
@@ -225,6 +225,8 @@ def solve_internship(all_location_names, all_location_capacities,
             Array indexing 'all_location_names' belonging to a 'internship'.
         allocation_rule : Array of int.
             Array of week count following the index of 'all_internships'.
+        max_time : Int
+            Maximum time for solver in seconds.
 
     Returns:
         assignment : Dictionary of student allocations.
@@ -351,7 +353,7 @@ def solve_internship(all_location_names, all_location_capacities,
     solver = cp_model.CpSolver()
 
     # Set a time limit
-    solver.parameters.max_time_in_seconds = 55
+    solver.parameters.max_time_in_seconds = max_time
 
     # Start
     status = solver.Solve(model)
