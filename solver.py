@@ -204,8 +204,8 @@ from ortools.sat.python import cp_model
 #    return(assignment, solver, status)
 
 def solve_internship(all_location_names, all_location_capacities, 
-                     all_student_names, all_week_names, all_internships, 
-                     allocation_rule, max_time=55):
+                     all_student_names, all_student_priorities, all_week_names, 
+                     all_internships, allocation_rule, max_time=55):
     """Solve internship allocation.
 
     This function solves the allocation task given the following input
@@ -219,6 +219,8 @@ def solve_internship(all_location_names, all_location_capacities,
             A list of capacities (per week) for indices in 'all_location_names'.
         all_student_names : Array of string.
             A list of student names.
+        all_student_priorities : Array of Array of Array of int.
+            Priorities per student per internship ordered in location.
         all_week_names : Array of string.
             A list of week names (sorted by time, ASC).
         all_internships : Array of Array of Int.
@@ -244,8 +246,9 @@ def solve_internship(all_location_names, all_location_capacities,
     # ====
     # Pre-rule: Compensate for missing weeks (weeks w. no allocation)
     # ----
+    delta = 0
     if len(all_week_names) > sum(allocation_rule):
-        dif = len(all_week_names) - sum(allocation_rule)
+        delta = len(all_week_names) - sum(allocation_rule)
 
         # Append a 'not allocated' location
         all_location_names.append("NOT_A_LOCATION")
@@ -254,7 +257,7 @@ def solve_internship(all_location_names, all_location_capacities,
         all_location_capacities.append([999999 for i in range(len(all_week_names))])
 
         # Append new allocation rule (which must compensate the difference)
-        allocation_rule.append(dif)
+        allocation_rule.append(delta)
 
         # Append new internship
         last_index = len(all_location_names) - 1
@@ -315,7 +318,11 @@ def solve_internship(all_location_names, all_location_capacities,
     # Set objectives
     # ----
 
-    loss = []
+    # ---
+    # Rule: Pennalize 'jumps' in internships
+    # ---
+
+    loss_jumps = []
 
     # Initialize: Loss list
     for s in range(len(all_student_names)):
@@ -323,13 +330,10 @@ def solve_internship(all_location_names, all_location_capacities,
             for i in range(len(all_internships)):
                 for j in range(len(all_internships[i])):
                     name = f"loss_s{s}_w{w}_i{i}_j{j}"
-                    loss.append(model.NewIntVar(0, 1, name))
+                    loss_jumps.append(model.NewIntVar(0, 1, name))
 
-    # ---
-    # Rule: Pennalize 'jumps' in internships
-    # ---
+    # Create loss equation
     idx = 0
-
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)-1):
             for i in range(len(all_internships)):
@@ -340,12 +344,49 @@ def solve_internship(all_location_names, all_location_capacities,
                     # Pennalize changes "in the next week" allocation
                     model.Add(variable == assignment[(s, w, i, j)] - 
                               assignment[(s, w+1, i, j)])
-                    model.AddAbsEquality(loss[idx], variable)
+                    model.AddAbsEquality(loss_jumps[idx], variable)
 
                     idx = idx + 1
 
 
-    model.Minimize(sum(loss))
+    # ---
+    # Rule: Enforce priorities
+    # ---
+
+    m = len(all_location_names) # Max loss value
+    loss_priority = []
+
+    # Initialize: Loss list
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)):
+            for i in range(len(all_internships) - delta):
+                for j in range(len(all_internships[i])):
+                    name = f"x_loss_s{s}_w{w}_i{i}_j{j}"
+                    loss_priority.append(model.NewIntVar(0, m, name))
+
+    idx = 0
+    for s in range(len(all_student_names)):
+        for w in range(len(all_week_names)):
+            for i in range(len(all_internships) - delta): # Fix delta (0 or 1)
+                for j in range(len(all_internships[i])):
+                    name = f"priority_s{s}_w{w}_i{i}_j{j}"
+                    variable = model.NewIntVar(0, m, name)
+
+                    # Pennalize difference in priority assignment
+                    if all_internships[i][j] in all_student_priorities[s][i]:
+                        model.Add(variable == all_student_priorities[s][i].index( all_internships[i][j] ) ).OnlyEnforceIf(assignment[(s,w,i,j)])
+                    else:
+                        model.Add(variable == len(all_student_priorities[s][i]) ).OnlyEnforceIf(assignment[(s,w,i,j)])
+                    
+                    model.AddAbsEquality(loss_priority[idx], variable)
+
+                    idx = idx +1
+
+    # ---
+    # Function: Minimize
+    # ---
+
+    model.Minimize( sum(loss_jumps) + sum(loss_priority) )
 
     # ====
     # Invoke the solver
@@ -357,5 +398,8 @@ def solve_internship(all_location_names, all_location_capacities,
 
     # Start
     status = solver.Solve(model)
+
+    # Examine solution from an OR perspective
+    # print(solver.ResponseProto())
 
     return(assignment, solver, status)

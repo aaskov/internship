@@ -61,7 +61,7 @@ def solver():
     all_internships = request_data['all_internships']
     all_location_names = request_data['all_location_names']
     all_location_capacities = request_data['all_location_capacities']
-    #all_student_priorities = request_data['all_student_priorities']
+    all_student_priorities = request_data['all_student_priorities']
     all_week_names = request_data['all_week_names']
     allocation_rule = request_data['allocation_rule']
     all_student_names = request_data['all_student_names']
@@ -103,6 +103,11 @@ def solver():
         print("------------------")
         print(all_student_names)
         print("")
+        print("==================")
+        print("all_student_priorities")
+        print("------------------")
+        print(all_student_priorities)
+        print("")
 
 
     # ---
@@ -111,6 +116,7 @@ def solver():
     assignment, solver, status = solve_internship(all_location_names=all_location_names, 
                                                   all_location_capacities=all_location_capacities, 
                                                   all_student_names=all_student_names, 
+                                                  all_student_priorities=all_student_priorities,
                                                   all_week_names=all_week_names, 
                                                   all_internships=all_internships, 
                                                   allocation_rule=allocation_rule,

@@ -116,7 +116,7 @@
               "items": {
                 "type": "string"
               },
-              "example": ["Pædiatrisk Afdeling Kolding", "Lægerne Enghavevej Nyborg"]
+              "example": ["Pædiatrisk Afdeling Kolding", "Lægerne Enghavevej Nyborg", "Lægerne Valby"]
             },
             "all_location_capacities": {
               "type": "array",
@@ -126,7 +126,7 @@
                   "type": "integer"
                 }
               },
-              "example": "[[1, 1], [1, 1]]"
+              "example": [[1, 1], [1, 1], [1, 1]]
             },
             "all_student_names": {
                 "type": "array",
@@ -150,19 +150,32 @@
                       "type": "integer"
                     }
                 },
-                "example": "[[0], [1]]"
+                "example": [[0], [1, 2]]
             },
             "allocation_rule": {
               "type": "array",
               "items": {
                 "type": "integer"
               },
-              "example": "[1, 1]"
+              "example": [1, 1]
             },
             "max_time": {
               "type": "integer",
               "example": 10
-            }
+            },
+            "all_student_priorities": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": [[[0],[1, 2]], [[0],[1, 2]]]
+            },
         },
         "required": ["all_location_names", "all_location_capacities", "all_student_names", "all_student_priorities", "all_week_names", "all_internships", "allocation_rule"]
     }
