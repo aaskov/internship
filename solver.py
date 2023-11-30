@@ -356,10 +356,12 @@ def solve_internship(all_location_names, all_location_capacities,
     m = len(all_location_names) # Max loss value
     loss_priority = []
 
+    binary_delta = 1 if delta > 0 else 0
+
     # Initialize: Loss list
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)):
-            for i in range(len(all_internships) - delta):
+            for i in range(len(all_internships) - binary_delta):
                 for j in range(len(all_internships[i])):
                     name = f"x_loss_s{s}_w{w}_i{i}_j{j}"
                     loss_priority.append(model.NewIntVar(0, m, name))
@@ -367,7 +369,7 @@ def solve_internship(all_location_names, all_location_capacities,
     idx = 0
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)):
-            for i in range(len(all_internships) - delta): # Fix delta (0 or 1)
+            for i in range(len(all_internships) - binary_delta):
                 for j in range(len(all_internships[i])):
                     name = f"priority_s{s}_w{w}_i{i}_j{j}"
                     variable = model.NewIntVar(0, m, name)
