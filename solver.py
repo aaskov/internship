@@ -388,7 +388,7 @@ def solve_internship(all_location_names, all_location_capacities,
     # Function: Minimize
     # ---
 
-    model.Minimize( sum(loss_jumps) + sum(loss_priority) )
+    model.Minimize( len(all_location_names)*sum(loss_jumps) + sum(loss_priority) )  # Added large penalty to loss_jumps
 
     # ====
     # Invoke the solver
