@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+import os
+import uuid
+import pickle
+import threading
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask_swagger_ui import get_swaggerui_blueprint
 from ortools.sat.python import cp_model
 from solver import solve_internship
+
 
 
 # ==============================================================================
@@ -16,6 +21,7 @@ app = Flask(__name__)
 # This is related to the swagger definiton
 SWAGGER_URL="/swagger"
 API_URL="/static/swagger.json"
+
 
 
 # ==============================================================================
@@ -45,14 +51,57 @@ def home():
         "Message": "App is up and running successfully"
     })
 
-# Define the '/test' endpoint
-@app.route("/test", methods=["POST"])
-def test():
+# Define the '/echo' endpoint
+@app.route("/echo", methods=["POST"])
+def echo():
     request_data = request.get_json()
     return jsonify(request_data)
 
 
-# Define the '/solver' endpoint
+# Define the '/check' endpoint
+@app.route("/check", methods=["POST"])
+def check():
+    request_data = request.get_json()
+
+    # Map to variables
+    guid = request_data['guid']
+
+    # Now check if file is ready to be returned
+    if os.path.isfile(f"{guid}.pkl"):
+        return jsonify({"guid": guid, "is_ready": True})
+
+    else:
+        return jsonify({"guid": guid, "is_ready": False})
+
+
+# Define the '/solution' (POST) endpoint
+@app.route("/solution", methods=["POST"])
+def solution():
+    request_data = request.get_json()
+
+    # Map to variables
+    guid = request_data['guid']
+
+    # Load pickle
+    with open(f"{guid}.pkl", 'rb') as f:
+        element = pickle.load(f)
+
+    if "solution" in element:
+        response = {"is_feasible": element["is_feasible"],
+                    "is_optimal": element["is_optimal"],
+                    "objective": element["objective"],
+                    "conflicts": element["conflicts"],
+                    "branches": element["branches"],
+                    "wall_time": element["wall_time"],
+                    "solution": element["solution"]}
+    else:
+        response = {"is_feasible": element["is_feasible"],
+                    "is_optimal": element["is_optimal"]}
+
+    return(jsonify(response))
+
+
+# Define the '/solver' (POST) endpoint
 @app.route("/solver", methods=["POST"])
 def solver():
     request_data = request.get_json()
@@ -69,123 +118,29 @@ def solver():
 
 
     # ---
-    # Debug arguments
+    # Create a unique reference for data in/out
     # ---
-    if True:
-        print("")
-        print("==================")
-        print("all_internships")
-        print("------------------")
-        print(all_internships)
-        print("")
-        print("==================")
-        print("all_location_names")
-        print("------------------")
-        print(all_location_names)
-        print("")
-        print("==================")
-        print("all_location_capacities")
-        print("------------------")
-        print(all_location_capacities)
-        print("")
-        print("==================")
-        print("all_week_names")
-        print("------------------")
-        print(all_week_names)
-        print("")
-        print("==================")
-        print("allocation_rule")
-        print("------------------")
-        print(allocation_rule)
-        print("")
-        print("==================")
-        print("all_student_names")
-        print("------------------")
-        print(all_student_names)
-        print("")
-        print("==================")
-        print("all_student_priorities")
-        print("------------------")
-        print(all_student_priorities)
-        print("")
+    guid = uuid.uuid4()
+
+    # ---
+    # Call a threaded solver
+    # ---
+    x = threading.Thread(target=solve_internship, args=(all_location_names,
+                                                        all_location_capacities,
+                                                        all_student_names,
+                                                        all_student_priorities,
+                                                        all_week_names,
+                                                        all_internships,
+                                                        allocation_rule,
+                                                        guid,
+                                                        max_time))
+    x.start()
 
 
     # ---
-    # Call solution
+    # Construct response
     # ---
-    assignment, solver, status = solve_internship(all_location_names=all_location_names, 
-                                                  all_location_capacities=all_location_capacities, 
-                                                  all_student_names=all_student_names, 
-                                                  all_student_priorities=all_student_priorities,
-                                                  all_week_names=all_week_names, 
-                                                  all_internships=all_internships, 
-                                                  allocation_rule=allocation_rule,
-                                                  max_time=max_time)
-
-    # ---
-    # Construct output allocation
-    # ---
-    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
-        
-        # Construct a dictionary of assignments
-        solution = list()
-
-        for s in range(len(all_student_names)):
-            _new_entries = list()
-
-            for w in range(len(all_week_names)):
-                _new_entry = dict()
-
-                for i in range(len(all_internships)):
-                    for j in range(len(all_internships[i])):
-
-                        # Only append if True in assignment
-                        if solver.Value(assignment[(s,w,i,j)]):
-
-                            # Append anythig
-                            if len(_new_entries) == 0:
-                                _new_entry["student"] = all_student_names[s]
-                                _new_entry["start_week"] = all_week_names[w]
-                                _new_entry["duration"] = 1
-                                _new_entry["location"] = all_location_names[all_internships[i][j]]
-                                _new_entry["internship"] = i
-                                _new_entries.append(_new_entry)
-                            else:
-                                # Check if previous entry matches current internship
-                                if _new_entries[-1]["internship"] == i:
-                                    _new_entries[-1]["duration"] += 1
-
-                                else:
-                                    # Insert a new entry
-                                    _new_entry["student"] = all_student_names[s]
-                                    _new_entry["start_week"] = all_week_names[w]
-                                    _new_entry["duration"] = 1
-                                    _new_entry["location"] = all_location_names[all_internships[i][j]]
-                                    _new_entry["internship"] = i
-                                    _new_entries.append(_new_entry)
-
-            # Copy list to solution
-            for e in _new_entries:
-                solution.append(e)
-
-
-        # Return
-        return jsonify({
-            "is_feasible": status == cp_model.FEASIBLE,
-            "is_optimal": status == cp_model.OPTIMAL,
-            "objective": solver.ObjectiveValue(),
-            "conflicts": solver.NumConflicts(),
-            "branches": solver.NumBranches(),
-            "wall_time": solver.WallTime(),
-            "solution": solution
-        })
-
-    else:
-        # Return
-        return jsonify({
-            "is_feasible": status == cp_model.FEASIBLE,
-            "is_optimal": status == cp_model.OPTIMAL
-            })
+    return jsonify({"guid": guid})
 
 
 

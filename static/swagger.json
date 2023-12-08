@@ -6,7 +6,7 @@
       "contact": {
           "name": "Rasmus Jessen Aaskov"
       },
-      "version": "1.0.0"
+      "version": "1.0.1"
   },
   "schemes": [
       "http",
@@ -34,7 +34,7 @@
       }
     },
 
-    "/test": {
+    "/echo": {
       "post": {
         "description": "Returns the exact same object that it is provided in body",
         "consumes": [
@@ -49,7 +49,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/test_data"
+              "$ref": "#/definitions/echo"
             }
           }
         ],
@@ -63,7 +63,7 @@
 
     "/solver": {
       "post": {
-        "description": "Solve a new instance of the student allocation problem",
+        "description": "Send request for a new instrance of student allocation",
         "consumes": [
           "application/json"
         ],
@@ -76,7 +76,61 @@
             "in": "body",
             "required": true,
             "schema" : {
-              "$ref": "#/definitions/solver_data"
+              "$ref": "#/definitions/solver"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+
+    "/check": {
+      "post": {
+        "description": "Check the solver state for a given guid",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema" : {
+              "$ref": "#/definitions/check"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          }
+        }
+      }
+    },
+
+    "/solution": {
+      "post": {
+        "description": "Get the responce for the solved student allocation",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema" : {
+              "$ref": "#/definitions/solution"
             }
           }
         ],
@@ -90,7 +144,7 @@
 
   },
 "definitions": {
-    "test_data": {
+    "echo": {
         "type": "object",
         "properties": {
             "something1": {
@@ -108,7 +162,7 @@
             },
         }
     },
-    "solver_data": {
+    "solver": {
         "type": "object",
         "properties": {
             "all_location_names": {
@@ -178,6 +232,26 @@
             },
         },
         "required": ["all_location_names", "all_location_capacities", "all_student_names", "all_student_priorities", "all_week_names", "all_internships", "allocation_rule"]
+    },
+    "solution": {
+      "type": "object",
+      "properties": {
+        "guid": {
+          "type": "string",
+          "example": "cb2186f5-6577-423c-829e-55514d52c811"
+        }
+      },
+      "required": ["guid"]
+    },
+    "check": {
+      "type": "object",
+      "properties": {
+        "guid": {
+          "type": "string",
+          "example": "cb2186f5-6577-423c-829e-55514d52c811"
+        }
+      },
+      "required": ["guid"]
     }
 }
 }

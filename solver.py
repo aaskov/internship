@@ -5,12 +5,13 @@ This module contains the assignment solver for the student allocation problem.
 The assignment solver returns the optimized solution to a given input.
 
 """
+import pickle
 from ortools.sat.python import cp_model
 
 
 def solve_internship(all_location_names, all_location_capacities, 
                      all_student_names, all_student_priorities, all_week_names, 
-                     all_internships, allocation_rule, max_time=55):
+                     all_internships, allocation_rule, guid, max_time=55):
     """Solve internship allocation.
 
     This function solves the allocation task given the following input
@@ -32,16 +33,10 @@ def solve_internship(all_location_names, all_location_capacities,
             Array indexing 'all_location_names' belonging to a 'internship'.
         allocation_rule : Array of int.
             Array of week count following the index of 'all_internships'.
+        guid : string
+            A unique GUID for this call.
         max_time : Int
             Maximum time for solver in seconds.
-
-    Returns:
-        assignment : Dictionary of student allocations.
-            Dictionary with a 4d-tuple containing boolean allocation.
-        solver : CP-model solver.
-            Variable containing the cp-model model solver.
-        status : Status for the model solver.
-            Variable containing the status of the model solver.
 
     """
     assignment = {}
@@ -209,4 +204,69 @@ def solve_internship(all_location_names, all_location_capacities,
     # Examine solution from an OR perspective
     # print(solver.ResponseProto())
 
-    return(assignment, solver, status)
+    # Prepare response
+    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
+    
+        # Construct a dictionary of assignments
+        solution = list()
+
+        for s in range(len(all_student_names)):
+            _new_entries = list()
+
+            for w in range(len(all_week_names)):
+                _new_entry = dict()
+
+                for i in range(len(all_internships)):
+                    for j in range(len(all_internships[i])):
+
+                        # Only append if True in assignment
+                        if solver.Value(assignment[(s,w,i,j)]):
+
+                            # Append anythig
+                            if len(_new_entries) == 0:
+                                _new_entry["student"] = all_student_names[s]
+                                _new_entry["start_week"] = all_week_names[w]
+                                _new_entry["duration"] = 1
+                                _new_entry["location"] = all_location_names[all_internships[i][j]]
+                                _new_entry["internship"] = i
+                                _new_entries.append(_new_entry)
+                            else:
+                                # Check if previous entry matches current internship
+                                if _new_entries[-1]["internship"] == i:
+                                    _new_entries[-1]["duration"] += 1
+
+                                else:
+                                    # Insert a new entry
+                                    _new_entry["student"] = all_student_names[s]
+                                    _new_entry["start_week"] = all_week_names[w]
+                                    _new_entry["duration"] = 1
+                                    _new_entry["location"] = all_location_names[all_internships[i][j]]
+                                    _new_entry["internship"] = i
+                                    _new_entries.append(_new_entry)
+
+            # Copy list to solution
+            for e in _new_entries:
+                solution.append(e)
+
+        response = {
+            "is_feasible": status == cp_model.FEASIBLE,
+            "is_optimal": status == cp_model.OPTIMAL,
+            "objective": solver.ObjectiveValue(),
+            "conflicts": solver.NumConflicts(),
+            "branches": solver.NumBranches(),
+            "wall_time": solver.WallTime(),
+            "solution": solution
+        }
+
+    else:
+
+        response = {
+            "is_feasible": status == cp_model.FEASIBLE,
+            "is_optimal": status == cp_model.OPTIMAL
+        }
+
+
+    # Save in pickle
+    file = open(f"{guid}.pkl", 'wb')
+    pickle.dump(response, file)
+    file.close()
