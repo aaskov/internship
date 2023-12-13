@@ -116,6 +116,52 @@ def solver():
     all_student_names = request_data['all_student_names']
     max_time = request_data['max_time']
 
+    # ----
+    # Debug
+    # ----
+    print("")
+    print("===all_internships===")
+    print("------")
+    print(all_internships)
+    print("")
+
+    print("")
+    print("===all_location_names===")
+    print("------")
+    print(all_location_names)
+    print("")
+
+    print("")
+    print("===all_location_capacities===")
+    print("------")
+    print(all_location_capacities)
+    print("")
+
+    print("")
+    print("===all_student_priorities===")
+    print("------")
+    print(all_student_priorities)
+    print("")
+
+    print("")
+    print("===allocation_rule===")
+    print("------")
+    print(allocation_rule)
+    print("")
+
+    print("")
+    print("===all_student_names===")
+    print("------")
+    print(all_student_names)
+    print("")
+
+    print("")
+    print("===max_time===")
+    print("------")
+    print(max_time)
+    print("")
+
+
 
     # ---
     # Create a unique reference for data in/out
