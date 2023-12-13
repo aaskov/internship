@@ -78,7 +78,8 @@ def solve_internship(all_location_names, all_location_capacities,
         # Then remove right indexes (reversed order)
         for i in right[::-1]:
             for k in range(len(all_location_capacities)):
-                all_location_capacities[k].pop(i)
+                if i < len(all_location_capacities[k]):
+                    all_location_capacities[k].pop(i)
             all_week_names.pop(i)
 
         # And then remove eft
