@@ -136,7 +136,6 @@ def solver():
                                                         max_time))
     x.start()
 
-
     # ---
     # Construct response
     # ---

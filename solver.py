@@ -43,25 +43,49 @@ def solve_internship(all_location_names, all_location_capacities,
 
     model = cp_model.CpModel()
 
+
     # ====
-    # Pre-rule: Compensate for missing weeks (weeks w. no allocation)
+    # Pre-rule: Determine best period (restrict weeks)
     # ----
-    delta = 0
+    
     if len(all_week_names) > sum(allocation_rule):
-        delta = len(all_week_names) - sum(allocation_rule)
 
-        # Append a 'not allocated' location
-        all_location_names.append("NOT_A_LOCATION")
+        # The we need to dertermine which week to start from 
+        moving_sum_capacity = [0]*len(all_week_names)
+        for i in range(len(all_location_names)):
+            for j in range(len(all_location_capacities[i])):
+                moving_sum_capacity[j] += all_location_capacities[i][j]
 
-        # Append infinity capacity
-        all_location_capacities.append([999999 for i in range(len(all_week_names))])
 
-        # Append new allocation rule (which must compensate the difference)
-        allocation_rule.append(delta)
+        # Then determine best location
+        difference = len(all_week_names) - sum(allocation_rule)
+        moving_cumulative_sum = [0]*(difference+1)
+        for i in range(len(moving_cumulative_sum)):
+            _sum = sum([moving_sum_capacity[i+j] for j in range(len(allocation_rule))])
+            moving_cumulative_sum[i] = _sum
+        
 
-        # Append new internship
-        last_index = len(all_location_names) - 1
-        all_internships.append([last_index])
+        start_index = moving_cumulative_sum.index(max(moving_cumulative_sum))
+        end_index = start_index + sum(allocation_rule) - 1
+
+
+        # Determine indexes to remove
+        _temp = range(len(all_week_names))
+        right = [i for i in _temp if i > end_index]
+        left = [i for i in _temp if i < start_index]
+
+
+        # Then remove right indexes (reversed order)
+        for i in right[::-1]:
+            for k in range(len(all_location_capacities)):
+                all_location_capacities[k].pop(i)
+            all_week_names.pop(i)
+
+        # And then remove eft
+        for i in left:
+            for k in range(len(all_location_capacities)):
+                all_location_capacities[k].pop(0)
+            all_week_names.pop(0)
 
 
     # ====
@@ -156,12 +180,10 @@ def solve_internship(all_location_names, all_location_capacities,
     m = len(all_location_names) # Max loss value
     loss_priority = []
 
-    binary_delta = 1 if delta > 0 else 0
-
     # Initialize: Loss list
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)):
-            for i in range(len(all_internships) - binary_delta):
+            for i in range(len(all_internships)):
                 for j in range(len(all_internships[i])):
                     name = f"x_loss_s{s}_w{w}_i{i}_j{j}"
                     loss_priority.append(model.NewIntVar(0, m, name))
@@ -169,7 +191,7 @@ def solve_internship(all_location_names, all_location_capacities,
     idx = 0
     for s in range(len(all_student_names)):
         for w in range(len(all_week_names)):
-            for i in range(len(all_internships) - binary_delta):
+            for i in range(len(all_internships)):
                 for j in range(len(all_internships[i])):
                     name = f"priority_s{s}_w{w}_i{i}_j{j}"
                     variable = model.NewIntVar(0, m, name)
@@ -188,7 +210,7 @@ def solve_internship(all_location_names, all_location_capacities,
     # Function: Minimize
     # ---
 
-    model.Minimize( len(all_location_names)*sum(loss_jumps) + sum(loss_priority) )  # Added large penalty to loss_jumps
+    model.Minimize( sum(loss_jumps) + sum(loss_priority) )  # Added large penalty to loss_jumps
 
     # ====
     # Invoke the solver
@@ -200,9 +222,6 @@ def solve_internship(all_location_names, all_location_capacities,
 
     # Start
     status = solver.Solve(model)
-
-    # Examine solution from an OR perspective
-    # print(solver.ResponseProto())
 
     # Prepare response
     if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
